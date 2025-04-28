@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { colors } from '../theme/colors';
 import CustomButton from '../components/CustomButton';
 import { SvgXml } from 'react-native-svg';
 import { LogoSvg } from '../assets/images/logo';
+import { registerUser } from '../services/api';
 
 export default function RegisterScreen({ navigation }) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
+    identity: '',
   });
   
   const [errors, setErrors] = useState({
     fullName: '',
     email: '',
     phone: '',
+    identity: '',
   });
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -32,7 +37,6 @@ export default function RegisterScreen({ navigation }) {
       ...prev,
       [field]: value
     }));
-    // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -41,33 +45,59 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     const newErrors = {};
     
-    // Validar nombre
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'El nombre es requerido';
     }
     
-    // Validar email
     if (!formData.email.trim()) {
       newErrors.email = 'El correo es requerido';
     } else if (!validateEmail(formData.email)) {
       newErrors.email = 'Ingresa un correo válido';
     }
     
-    // Validar teléfono
     if (!formData.phone.trim()) {
       newErrors.phone = 'El teléfono es requerido';
     } else if (!validatePhone(formData.phone)) {
       newErrors.phone = 'Ingresa un teléfono válido';
     }
 
+    if (!formData.identity.trim()) {
+      newErrors.identity = 'El número de identidad es requerido';
+    } else if (formData.identity.length < 13) {
+      newErrors.identity = 'El número de identidad debe tener 13 dígitos';
+    }
+
     setErrors(newErrors);
 
-    // Si no hay errores, navegar a verificación
+    // Si no hay errores, proceder con el registro
     if (Object.keys(newErrors).length === 0) {
-      navigation.navigate('Verification');
+      setIsLoading(true);
+      try {
+        const response = await registerUser(formData);
+        
+        if (response.estado) {
+          // Registro exitoso
+          navigation.navigate('Verification');
+        } else {
+          // Error del servidor
+          Alert.alert(
+            'Error',
+            response.descripcion || 'Error al registrar usuario',
+            [{ text: 'OK' }]
+          );
+        }
+      } catch (error) {
+        Alert.alert(
+          'Error',
+          'Error de conexión. Por favor, intente nuevamente.',
+          [{ text: 'OK' }]
+        );
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -97,6 +127,7 @@ export default function RegisterScreen({ navigation }) {
             value={formData.fullName}
             onChangeText={(text) => handleInputChange('fullName', text)}
             placeholderTextColor="#999"
+            editable={!isLoading}
           />
           {errors.fullName ? <Text style={styles.errorText}>{errors.fullName}</Text> : null}
         </View>
@@ -110,6 +141,7 @@ export default function RegisterScreen({ navigation }) {
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#999"
+            editable={!isLoading}
           />
           {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
         </View>
@@ -122,8 +154,23 @@ export default function RegisterScreen({ navigation }) {
             onChangeText={(text) => handleInputChange('phone', text)}
             keyboardType="phone-pad"
             placeholderTextColor="#999"
+            editable={!isLoading}
           />
           {errors.phone ? <Text style={styles.errorText}>{errors.phone}</Text> : null}
+        </View>
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={[styles.input, errors.identity && styles.inputError]}
+            placeholder="Número de Identidad"
+            value={formData.identity}
+            onChangeText={(text) => handleInputChange('identity', text)}
+            keyboardType="number-pad"
+            maxLength={13}
+            placeholderTextColor="#999"
+            editable={!isLoading}
+          />
+          {errors.identity ? <Text style={styles.errorText}>{errors.identity}</Text> : null}
         </View>
 
         <CustomButton
@@ -131,6 +178,8 @@ export default function RegisterScreen({ navigation }) {
           onPress={handleRegister}
           style={styles.continueButton}
           textStyle={styles.continueButtonText}
+          loading={isLoading}
+          disabled={isLoading}
         />
       </View>
     </View>
