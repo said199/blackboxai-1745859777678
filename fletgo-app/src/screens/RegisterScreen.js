@@ -78,9 +78,9 @@ export default function RegisterScreen({ navigation }) {
       try {
         const response = await registerUser(formData);
         
-        if (response.estado) {
-          // Registro exitoso
-          navigation.navigate('Verification');
+      if (response.estado) {
+        // Registro exitoso, navegar a verificación con el email
+        navigation.navigate('Verification', { email: formData.email });
         } else {
           // Error del servidor
           Alert.alert(
