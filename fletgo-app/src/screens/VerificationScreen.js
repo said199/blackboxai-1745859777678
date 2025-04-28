@@ -8,7 +8,7 @@ export default function VerificationScreen({ navigation, route }) {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const email = route.params?.email;
+  const { email, isLogin, nombre } = route.params || {};
 
   const inputRefs = [
     React.useRef(null),
@@ -55,7 +55,31 @@ export default function VerificationScreen({ navigation, route }) {
       const success = await verifyOTP(email, otp);
       
       if (success) {
-        navigation.replace('Home');
+        if (isLogin) {
+          // Si es login, mostrar mensaje de bienvenida
+          Alert.alert(
+            'Bienvenido',
+            'Has iniciado sesión correctamente',
+            [
+              { 
+                text: 'OK',
+                onPress: () => navigation.replace('Home')
+              }
+            ]
+          );
+        } else {
+          // Si es registro, mostrar mensaje de cuenta creada
+          Alert.alert(
+            'Cuenta Verificada',
+            'Tu cuenta ha sido verificada exitosamente',
+            [
+              { 
+                text: 'OK',
+                onPress: () => navigation.replace('Home')
+              }
+            ]
+          );
+        }
       } else {
         setError('Código de verificación incorrecto');
       }
@@ -88,7 +112,11 @@ export default function VerificationScreen({ navigation, route }) {
 
       <View style={styles.content}>
         <Text style={styles.title}>Ingresa el código de verificación</Text>
-        <Text style={styles.subtitle}>Enviamos un código de 4 dígitos a tu WhatsApp</Text>
+        <Text style={styles.subtitle}>
+          {isLogin 
+            ? `Hola ${nombre}, ingresa el código que recibiste en tu WhatsApp para iniciar sesión`
+            : 'Enviamos un código de 4 dígitos a tu WhatsApp para verificar tu cuenta'}
+        </Text>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.otpContainer}>
