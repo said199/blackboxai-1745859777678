@@ -1,5 +1,40 @@
 const API_URL = 'https://www.fletgohn.com/backend';
 
+export const loginUser = async (phone) => {
+  try {
+    const response = await fetch(`${API_URL}/api/autenticacion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: phone
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      return {
+        estado: true,
+        correo: data.data.correo,
+        nombre: data.data.nombre
+      };
+    } else {
+      return {
+        estado: false,
+        descripcion: data.menssage || 'Error al iniciar sesión'
+      };
+    }
+  } catch (error) {
+    console.error('Error en login:', error);
+    return {
+      estado: false,
+      descripcion: 'Error de conexión. Por favor, intente nuevamente.'
+    };
+  }
+};
+
 export const registerUser = async (userData) => {
   try {
     const response = await fetch(`${API_URL}/api/registrar_usuario`, {
