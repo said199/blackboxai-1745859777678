@@ -26,3 +26,24 @@ export const registerUser = async (userData) => {
     };
   }
 };
+
+export const verifyOTP = async (email, otp) => {
+  try {
+    const response = await fetch(`${API_URL}/api/activar_otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        correo: email,
+        otp: parseInt(otp.join(''), 10)
+      })
+    });
+
+    const success = await response.json();
+    return success;
+  } catch (error) {
+    console.error('Error en verificación:', error);
+    return false;
+  }
+};
