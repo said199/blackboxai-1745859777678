@@ -6,12 +6,14 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import PhoneInput from '../components/PhoneInput';
 import CustomButton from '../components/CustomButton';
 import RegisterLink from '../components/RegisterLink';
 import { colors } from '../theme/colors';
+import { loginUser } from '../services/api';
 
 const Logo = () => (
   <Svg width="280" height="100" viewBox="0 0 1000 300">
@@ -29,14 +31,51 @@ const Logo = () => (
 const LoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (phoneNumber.length < 8) {
       setError('Por favor ingresa un número válido');
       return;
     }
+    
     setError('');
-    navigation.replace('Home');
+    setIsLoading(true);
+
+    try {
+      const response = await loginUser(phoneNumber);
+      
+      if (response.estado) {
+        // Login exitoso, navegar a verificación
+        Alert.alert(
+          'Bienvenido',
+          `Hola ${response.nombre}, te enviaremos un código de verificación.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.navigate('Verification', { 
+                  email: response.correo,
+                  nombre: response.nombre,
+                  isLogin: true 
+                });
+              }
+            }
+          ]
+        );
+      } else {
+        // Error del servidor
+        setError(response.descripcion || 'Error al iniciar sesión');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Error de conexión. Por favor, intente nuevamente.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRegister = () => {
@@ -70,7 +109,8 @@ const LoginScreen = ({ navigation }) => {
             <CustomButton
               title="Iniciar Sesión"
               onPress={handleLogin}
-              disabled={!phoneNumber}
+              disabled={!phoneNumber || isLoading}
+              loading={isLoading}
             />
 
             <RegisterLink onPress={handleRegister} />
