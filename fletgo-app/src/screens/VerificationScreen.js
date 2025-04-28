@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { colors } from '../theme/colors';
 import CustomButton from '../components/CustomButton';
+import { verifyOTP } from '../services/api';
 
-export default function VerificationScreen({ navigation }) {
+export default function VerificationScreen({ navigation, route }) {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const email = route.params?.email;
 
   const inputRefs = [
     React.useRef(null),
@@ -35,21 +38,40 @@ export default function VerificationScreen({ navigation }) {
     }
   };
 
-  const handleVerification = () => {
+  const handleVerification = async () => {
     // Validar que todos los dígitos estén completos
     if (otp.some(digit => digit === '')) {
       setError('Por favor ingresa el código completo');
       return;
     }
-    
-    // Aquí iría la validación del código OTP con el backend
-    setError('');
-    navigation.replace('Home');
+
+    if (!email) {
+      Alert.alert('Error', 'No se pudo obtener el correo electrónico');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const success = await verifyOTP(email, otp);
+      
+      if (success) {
+        navigation.replace('Home');
+      } else {
+        setError('Código de verificación incorrecto');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Error al verificar el código. Por favor, intente nuevamente.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResend = () => {
-    // Aquí iría la lógica para reenviar el código
-    console.log('Reenviar código');
+    Alert.alert('Reenviar código', 'Se ha reenviado el código a tu WhatsApp');
   };
 
   return (
@@ -61,7 +83,7 @@ export default function VerificationScreen({ navigation }) {
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Verification</Text>
+        <Text style={styles.headerTitle}>Verificación</Text>
       </View>
 
       <View style={styles.content}>
@@ -83,15 +105,17 @@ export default function VerificationScreen({ navigation }) {
               value={otp[index]}
               onChangeText={(value) => handleOtpChange(value, index)}
               onKeyPress={(e) => handleKeyPress(e, index)}
-              returnKeyType={index === 3 ? 'done' : 'next'}
+              editable={!isLoading}
             />
           ))}
         </View>
 
         <View style={styles.resendContainer}>
           <Text style={styles.resendText}>¿No recibiste el código? </Text>
-          <TouchableOpacity onPress={handleResend}>
-            <Text style={styles.resendLink}>Reenviar</Text>
+          <TouchableOpacity onPress={handleResend} disabled={isLoading}>
+            <Text style={[styles.resendLink, isLoading && styles.resendLinkDisabled]}>
+              Reenviar
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -100,6 +124,8 @@ export default function VerificationScreen({ navigation }) {
           onPress={handleVerification}
           style={styles.continueButton}
           textStyle={styles.continueButtonText}
+          loading={isLoading}
+          disabled={isLoading}
         />
       </View>
     </View>
@@ -165,6 +191,13 @@ const styles = StyleSheet.create({
   otpInputError: {
     borderColor: 'red',
   },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginTop: 10,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   resendContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -179,6 +212,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  resendLinkDisabled: {
+    opacity: 0.5,
+  },
   continueButton: {
     backgroundColor: colors.secondary,
     width: '100%',
@@ -191,12 +227,5 @@ const styles = StyleSheet.create({
     color: '#FFF',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 14,
-    marginTop: 10,
-    marginBottom: 20,
-    textAlign: 'center',
   },
 });
