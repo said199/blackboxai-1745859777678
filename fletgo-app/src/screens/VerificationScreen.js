@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'reac
 import { colors } from '../theme/colors';
 import CustomButton from '../components/CustomButton';
 import { verifyOTP } from '../services/api';
+import { useUser } from '../context/UserContext';
 
 export default function VerificationScreen({ navigation, route }) {
+  const { updateUserData } = useUser();
   const [otp, setOtp] = useState(['', '', '', '']);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -55,6 +57,13 @@ export default function VerificationScreen({ navigation, route }) {
       const success = await verifyOTP(email, otp);
       
       if (success) {
+        // Ensure user data is set in context
+        updateUserData({
+          name: nombre,
+          email: email,
+          isVerified: true
+        });
+
         if (isLogin) {
           // Si es login, mostrar mensaje de bienvenida
           Alert.alert(
