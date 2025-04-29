@@ -62,6 +62,24 @@ export const registerUser = async (userData) => {
   }
 };
 
+export const updateUserProfile = async (userData) => {
+  try {
+    const response = await fetch(`${API_URL}/api/actualizar_perfil`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData)
+    });
+
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('Error al actualizar perfil:', error);
+    return false;
+  }
+};
+
 export const verifyOTP = async (email, otp) => {
   try {
     const response = await fetch(`${API_URL}/api/activar_otp`, {
