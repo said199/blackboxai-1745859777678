@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Image, TouchableOpacity } from 'react-native';
 import {
   DrawerContentScrollView,
   DrawerItem,
@@ -7,18 +7,41 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useUserMode } from '../context/UserModeContext';
+import { useUser } from '../context/UserContext';
 
 export function DrawerContent(props) {
   const { isDriverMode, toggleDriverMode } = useUserMode();
+  const { userData } = useUser();
+
+  const defaultAvatar = 'https://www.fletgohn.com/backend/default-avatar.png';
 
   return (
     <View style={styles.container}>
       <DrawerContentScrollView {...props}>
         <View style={styles.userSection}>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>Gabriel</Text>
-            <Text style={styles.userEmail}>gabriel.lulo@gmail...</Text>
-            <Text style={styles.location}>Honduras</Text>
+          <View style={styles.userContainer}>
+            <Image 
+              source={{ uri: userData.photo || defaultAvatar }} 
+              style={styles.avatar}
+            />
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{userData.name || 'Usuario'}</Text>
+              <Text style={styles.userEmail}>{userData.email || 'correo@ejemplo.com'}</Text>
+              <Text style={styles.location}>{userData.location || 'Honduras'}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => {
+                props.navigation.navigate('EditProfile');
+                props.navigation.closeDrawer();
+              }}
+            >
+              <MaterialCommunityIcons 
+                name="pencil" 
+                size={24} 
+                color={colors.secondary}
+              />
+            </TouchableOpacity>
           </View>
         </View>
         
@@ -139,8 +162,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.inputBg,
   },
+  userContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.inputBg,
+  },
   userInfo: {
-    marginLeft: 10,
+    flex: 1,
+    marginLeft: 15,
+  },
+  editButton: {
+    padding: 8,
   },
   userName: {
     fontSize: 16,
